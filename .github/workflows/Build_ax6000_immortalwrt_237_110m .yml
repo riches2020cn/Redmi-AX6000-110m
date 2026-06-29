@@ -115,6 +115,16 @@ jobs:
 
         # 编译 passwall_packages，再次在 feeds.conf.default文件，第 1 行插入 passwall_packages (这样 packages 就变成了第 1 行，luci 变成了第 2 行)
         #sed -i '1i src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main' ./feeds.conf.default
+
+    # 升级最新 Golang 编译环境
+    - name: update Golang
+      working-directory: ./immortalwrt
+      run: |
+        rm -rf feeds/packages/lang/golang
+        rm -rf package/feeds/packages/golang
+        find package/ -name "golang" -exec rm -rf {} +
+        # 升级最新 Golang 编译环境，克隆适配 2026 最新主线的 Golang 编译环境
+        git clone https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang  
         
     - name: Update feeds
       working-directory: ./immortalwrt
