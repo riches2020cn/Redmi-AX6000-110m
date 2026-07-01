@@ -145,7 +145,7 @@ jobs:
     #    git clone --depth 1 -b main https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/custom-passwall/packages
     #    git clone --depth 1 -b main https://github.com/Openwrt-Passwall/openwrt-passwall.git package/custom-passwall/luci
 
-    # 编译 OpenClash 最新版，若上方写入 feeds.conf.default 文件无法编译时，可使用 package 编译法，
+    # 编译 OpenClash 最新版，若上方写入 feeds.conf.default 文件无法编译时，可使用 package 编译法
     #- name: Import external feeds & Custom OpenClash
     #  working-directory: ./immortalwrt
     #  run: |
