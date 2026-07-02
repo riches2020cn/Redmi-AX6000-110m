@@ -179,7 +179,8 @@ jobs:
         CONFIG_PACKAGE_luci-app-openclash=y
         CONFIG_PACKAGE_luci-app-passwall=y
         CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Geoview=y
-        CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Haproxy=y
+        # 不编译 haproxy 依赖（Passwall 负载均衡，效果并不好），启动会报错（仅限237大佬固件）
+        # CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Haproxy is not set
         CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ShadowsocksR_Libev_Client=y
         CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks_Rust_Client=y
         CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Simple_Obfs=y
