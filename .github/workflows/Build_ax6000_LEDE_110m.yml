@@ -50,8 +50,7 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        # 1. 编译前，必须更新安装依赖包命令，请到 OpenWrt-Depends 仓库：https://github.com/sky2016cn/OpenWrt-Depends/actions/workflows/update_dependency_LEDE.yml，运行一次"update_dependency_LEDE.yml"脚本
-        echo "=== 开始安装 OpenWrt 编译依赖 ==="
+        # 1. 编译前，必须更新安装依赖包命令，请到 sky2016cn/OpenWrt-Depends 仓库：https://github.com/sky2016cn/OpenWrt-Depends/actions/workflows/update_dependency_LEDE.yml，运行一次"Run workflow"
         curl -fsSL https://raw.githubusercontent.com/sky2016cn/OpenWrt-Depends/main/depends-lede | sudo bash
                 
         # 2. 清理系统无用软件包，释放磁盘空间
