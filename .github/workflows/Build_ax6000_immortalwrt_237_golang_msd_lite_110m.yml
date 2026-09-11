@@ -304,18 +304,33 @@ jobs:
       run: |
         # 创建专门存放最终固件的临时目录
         mkdir -p /tmp/firmware
-        
-        # 筛选压缩镜像文件和 config 配置文件，避免上传无用中间包
+
+        # 1. 优先提取编译好的镜像和配置文件
         cp /builder/openwrt/bin/targets/*/*/*.img.gz /tmp/firmware/ 2>/dev/null || true
         cp /builder/openwrt/bin/targets/*/*/*efi*.img /tmp/firmware/ 2>/dev/null || true
         cp /builder/openwrt/.config /tmp/firmware/config.buildinfo 2>/dev/null || true
-        
+
+        # 2. 保底机制：检查 /tmp/firmware 是否为空
+        if [ -z "$(ls -A /tmp/firmware 2>/dev/null)" ]; then
+          echo "⚠️ 未按预期匹配到镜像文件，触发保底机制：复制整个 targets 输出目录"
+          cp -r /builder/openwrt/bin/targets/*/*/* /tmp/firmware/ 2>/dev/null || true
+        fi
+
+        # =========================================================
+        # 👇【修改区】换其他设备时，只需修改下面这一行的名字（如 AX6000_LEDE）
+        FIRMWARE_TYPE="Build_ax6000_immortalwrt_237_golang_msd_lite_110m"
+        # =========================================================
+
+        # 3. 自动拼接生成变量，传递给后续步骤
+        echo "RELEASE_TAG=${FIRMWARE_TYPE}_$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_ENV
+        echo "RELEASE_NAME=${FIRMWARE_TYPE} [$(date +'%Y.%m.%d')]" >> $GITHUB_ENV
+
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
-        name: Build_ax6000_immortalwrt_237_golang_msd_lite_110m
+        name: '${{ env.RELEASE_TAG }}'
         path: /tmp/firmware
 
     - name: Upload firmware to Release
@@ -324,9 +339,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: Build_ax6000_immortalwrt_237_golang_msd_lite_110m
-        name: OpenWrt 固件发布
+        tag_name: '${{ env.RELEASE_TAG }}'
+        name: '${{ env.RELEASE_NAME }}'
         body: |
-          ### Openwrt 固件发布
-          - 脚本来源：Build_ax6000_immortalwrt_237_golang_msd_lite_110m
+          ### 固件信息 (${{ env.RELEASE_NAME }})
         files: /tmp/firmware/*
