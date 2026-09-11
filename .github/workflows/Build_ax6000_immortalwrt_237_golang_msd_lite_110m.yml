@@ -330,10 +330,3 @@ jobs:
           ### Openwrt 固件发布
           - 脚本来源：Build_ax6000_immortalwrt_237_golang_msd_lite_110m
         files: /tmp/firmware/*
-
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v7
-      with:
-        name: Build_ax6000_immortalwrt_237_golang_msd_lite_110m
-        path: /builder/openwrt/bin
