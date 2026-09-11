@@ -298,30 +298,28 @@ jobs:
     - name: Check Space
       run: |
         df -h
-        
+
     - name: Organize firmware files
       id: organize
       run: |
         # 创建专门存放最终固件的临时目录
         mkdir -p /tmp/firmware
 
-        # 1. 优先提取编译好的镜像和配置文件
-        cp /builder/openwrt/bin/targets/*/*/*.img.gz /tmp/firmware/ 2>/dev/null || true
-        cp /builder/openwrt/bin/targets/*/*/*efi*.img /tmp/firmware/ 2>/dev/null || true
+        # 1. 复制 targets 目录下的所有文件（镜像、sha256sums 等）到 /tmp/firmware
+        cp -r /builder/openwrt/bin/targets/*/*/* /tmp/firmware/ 2>/dev/null || true
+
+        # 2. 复制配置文件并命名为 config.buildinfo
         cp /builder/openwrt/.config /tmp/firmware/config.buildinfo 2>/dev/null || true
 
-        # 2. 保底机制：检查 /tmp/firmware 是否为空
-        if [ -z "$(ls -A /tmp/firmware 2>/dev/null)" ]; then
-          echo "⚠️ 未按预期匹配到镜像文件，触发保底机制：复制整个 targets 输出目录"
-          cp -r /builder/openwrt/bin/targets/*/*/* /tmp/firmware/ 2>/dev/null || true
-        fi
+        # 3. 精准清理临时目录中的非固件文件（如 packages 文件夹、manifest、buildinfo 等）
+        rm -rf /tmp/firmware/packages /tmp/firmware/*.manifest /tmp/firmware/*.buildinfo 2>/dev/null || true
 
         # ===============================================================
         # 👇【修改区】修改成脚本的名称
         FIRMWARE_TYPE="Build_ax6000_immortalwrt_237_golang_msd_lite_110m"
         # ===============================================================
 
-        # 3. 自动拼接生成变量，传递给后续步骤
+        # 4. 自动拼接生成变量，传递给后续步骤
         echo "RELEASE_TAG=${FIRMWARE_TYPE}_$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_ENV
         echo "RELEASE_NAME=${FIRMWARE_TYPE} [$(date +'%Y.%m.%d')]" >> $GITHUB_ENV
 
@@ -343,4 +341,4 @@ jobs:
         name: '${{ env.RELEASE_NAME }}'
         body: |
           ### 固件信息 (${{ env.RELEASE_NAME }})
-        files: /tmp/firmware/*
+        files: /tmp/firmware/* 
