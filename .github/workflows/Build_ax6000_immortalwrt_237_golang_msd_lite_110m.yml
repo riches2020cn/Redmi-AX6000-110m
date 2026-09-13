@@ -299,46 +299,56 @@ jobs:
       run: |
         df -h
 
-    - name: Organize firmware files
+    - name: Organize Files (整理固件与插件)
       id: organize
+      working-directory: /builder/openwrt
+      if: success() && !cancelled()
       run: |
-        # 创建专门存放最终固件的临时目录
+        # 1. 创建用于暂存发布文件的输出目录
         mkdir -p /tmp/firmware
 
-        # 1. 复制 targets 目录下的所有文件（镜像、sha256sums 等）到 /tmp/firmware
-        cp -r /builder/openwrt/bin/targets/*/*/* /tmp/firmware/ 2>/dev/null || true
+        # 2. 定位 targets 编译产物目录（在绝对路径 /builder/openwrt/bin/targets/ 下寻找）
+        TARGET_DIR=$(find /builder/openwrt/bin/targets/ -maxdepth 2 -mindepth 2 -type d | head -n 1)
+        
+        if [ -d "$TARGET_DIR" ]; then
+          # 复制所有 targets 镜像、itb 文件、manifest、bl2.bin、sha256sums 等
+          cp -r $TARGET_DIR/* /tmp/firmware/ 2>/dev/null || true
+        fi
 
-        # 2. 复制配置文件并命名为 config.buildinfo
+        # 3. 复制并重命名配置文件
         cp /builder/openwrt/.config /tmp/firmware/config.buildinfo 2>/dev/null || true
+        cp /builder/openwrt/.config /tmp/firmware/build.config 2>/dev/null || true
 
-        # 3. 精准清理临时目录中的非固件文件（如 packages 文件夹、manifest、buildinfo 等）
-        rm -rf /tmp/firmware/packages /tmp/firmware/*.manifest /tmp/firmware/*.buildinfo 2>/dev/null || true
+        # 4. 打包所有编译生成的 ipk 插件为 Packages.tar.gz
+        if [ -d "/builder/openwrt/bin/packages" ]; then
+          mkdir -p /tmp/pkg_temp
+          find /builder/openwrt/bin/packages -type f -name "*.ipk" -exec cp -f {} /tmp/pkg_temp/ \;
+          tar -zcf /tmp/firmware/Packages.tar.gz -C /tmp pkg_temp
+          rm -rf /tmp/pkg_temp
+        fi
+
+        # 5. 精准清理不需要的临时 Packages 文件夹和多余的中间 buildinfo
+        rm -rf /tmp/firmware/packages /tmp/firmware/feeds.buildinfo /tmp/firmware/version.buildinfo 2>/dev/null || true
 
         # ===============================================================
         # 👇【修改区】修改成脚本的名称
         FIRMWARE_TYPE="Build_ax6000_immortalwrt_237_golang_msd_lite_110m"
         # ===============================================================
 
-        # 4. 自动拼接生成变量，传递给后续步骤
+        # 6. 将 FIRMWARE_TYPE 连同 TAG 和 NAME 一起写入 GITHUB_ENV 传递给后续步骤
+        echo "FIRMWARE_TYPE=${FIRMWARE_TYPE}" >> $GITHUB_ENV
         echo "RELEASE_TAG=${FIRMWARE_TYPE}_$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_ENV
         echo "RELEASE_NAME=${FIRMWARE_TYPE} [$(date +'%Y.%m.%d')]" >> $GITHUB_ENV
 
-        echo "status=success" >> $GITHUB_OUTPUT
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v7
-      with:
-        name: '${{ env.RELEASE_TAG }}'
-        path: /tmp/firmware
-
-    - name: Upload firmware to Release
+    - name: Upload firmware to Release (发布至 GitHub Release)
       uses: softprops/action-gh-release@v2
-      if: steps.organize.outputs.status == 'success' && !cancelled()
+      if: success() && !cancelled()
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: '${{ env.RELEASE_TAG }}'
         name: '${{ env.RELEASE_NAME }}'
         body: |
-          ### 固件信息 (${{ env.RELEASE_NAME }})
-        files: /tmp/firmware/* 
+          ### 固件信息
+          ${{ env.FIRMWARE_TYPE }}
+        files: /tmp/firmware/*
