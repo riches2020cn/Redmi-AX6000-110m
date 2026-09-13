@@ -304,7 +304,7 @@ jobs:
       working-directory: /builder/openwrt
       if: success() && !cancelled()
       run: |
-        # 1. 创建用于暂存发布文件的输出目录
+        # 1. 创建专门存放固件的临时目录
         mkdir -p /tmp/firmware
 
         # 2. 定位 targets 编译产物目录（在绝对路径 /builder/openwrt/bin/targets/ 下寻找）
