@@ -319,7 +319,7 @@ jobs:
         cp /builder/openwrt/.config /tmp/firmware/config.buildinfo 2>/dev/null || true
         cp /builder/openwrt/.config /tmp/firmware/build.config 2>/dev/null || true
 
-        # 4. 打包所有编译生成的 ipk 插件为 Packages.tar.gz
+        # 4. 打包所有编译生成的 ipk/apk 插件为 Packages.tar.gz
         if [ -d "/builder/openwrt/bin/packages" ]; then
           mkdir -p /tmp/pkg_temp
           find /builder/openwrt/bin/packages -type f -name "*.ipk" -exec cp -f {} /tmp/pkg_temp/ \;
